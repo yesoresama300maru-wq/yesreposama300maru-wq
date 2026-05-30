@@ -55,7 +55,11 @@ def normalize_lines(text: str) -> list[str]:
     lines: list[str] = []
     for raw in normalized.split("\n"):
         line = raw.strip()
-        line = re.sub(r"^[\-・*●○◆■□\d]+[.)、\s]*", "", line).strip()
+        # Keep date-prefixed titles such as "2026/6/15 開発定例会" intact;
+        # a broad digit-stripping bullet rule would otherwise turn them into
+        # "/6/15 開発定例会" before date extraction runs.
+        if not any(pattern.search(line) for pattern in DATE_PATTERNS):
+            line = re.sub(r"^(?:[\-・*●○◆■□]+|\d+[.)、])\s*", "", line).strip()
         if line:
             lines.append(line)
     return lines
@@ -89,9 +93,12 @@ def extract_title(lines: list[str]) -> str:
     return "議事録"
 
 
+def strip_action_label(line: str) -> str:
+    return re.sub(r"^(TODO|ToDo|タスク|宿題|対応|担当|アクション|Action)\s*[：:]?\s*", "", line).strip()
+
+
 def parse_action(line: str) -> ActionItem:
-    value = clean_after_label(line)
-    value = re.sub(r"^(TODO|ToDo|タスク|宿題|対応|担当|アクション|Action)\s*[：:]?\s*", "", value)
+    value = strip_action_label(line)
     for pattern in ACTION_PATTERNS:
         match = pattern.match(value)
         if match and len(match.group("task")) > 2:
@@ -101,6 +108,12 @@ def parse_action(line: str) -> ActionItem:
                 due=(match.group("due") or "未定").strip(),
             )
     return ActionItem(task=value)
+
+
+def looks_like_standalone_action(line: str) -> bool:
+    """Return True for compact action rows like "田中：資料作成（6/5）"."""
+    match = ACTION_PATTERNS[0].match(line)
+    return bool(match and match.group("due") and re.search(r"[：:]", line))
 
 
 def parse_transcript(text: str) -> MeetingMinutes:
@@ -134,7 +147,7 @@ def parse_transcript(text: str) -> MeetingMinutes:
 
         if any(word in line for word in DECISION_WORDS):
             minutes.decisions.append(clean_after_label(line))
-        elif any(word in line for word in ACTION_WORDS):
+        elif any(word in line for word in ACTION_WORDS) or looks_like_standalone_action(line):
             minutes.action_items.append(parse_action(line))
         elif current_section == "attendees":
             minutes.attendees.extend(split_values(line))

@@ -1,27 +1,42 @@
 from pathlib import Path
 import zipfile
 
-from minutes_maker import parse_transcript, save_minutes_excel
+from minutes_maker import parse_action, parse_transcript, save_minutes_excel
 
 
 def test_parse_transcript_extracts_core_sections():
     transcript = """
-    会議名：開発定例会
-    開催日：2026年5月30日
+    2026/6/15 開発定例会
     参加者：田中、佐藤
     議題：リリース準備
     決定：6月にβ版を公開する
-    担当：田中 リリースノートを作成（6/3）
+    田中：資料作成（6/5）
     """
 
     minutes = parse_transcript(transcript)
 
-    assert minutes.title == "開発定例会"
-    assert minutes.meeting_date == "2026-05-30"
+    assert minutes.title == "2026/6/15 開発定例会"
+    assert minutes.meeting_date == "2026-06-15"
     assert minutes.attendees == ["田中", "佐藤"]
     assert "リリース準備" in minutes.agenda
     assert "6月にβ版を公開する" in minutes.decisions[0]
     assert minutes.action_items[0].owner == "田中"
+    assert minutes.action_items[0].task == "資料作成"
+    assert minutes.action_items[0].due == "6/5"
+
+
+def test_extracts_date_from_slash_date_prefixed_title():
+    minutes = parse_transcript("2026/6/15 開発定例会\n議題：進捗確認")
+
+    assert minutes.meeting_date == "2026-06-15"
+
+
+def test_parse_action_with_full_width_colon_and_due_date():
+    action = parse_action("田中：資料作成（6/5）")
+
+    assert action.owner == "田中"
+    assert action.task == "資料作成"
+    assert action.due == "6/5"
 
 
 def test_save_minutes_excel_creates_xlsx_package(tmp_path: Path):
