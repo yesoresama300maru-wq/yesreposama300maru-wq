@@ -55,11 +55,9 @@ def normalize_lines(text: str) -> list[str]:
     lines: list[str] = []
     for raw in normalized.split("\n"):
         line = raw.strip()
-        # Keep date-prefixed titles such as "2026/6/15 開発定例会" intact;
-        # a broad digit-stripping bullet rule would otherwise turn them into
-        # "/6/15 開発定例会" before date extraction runs.
-        if not any(pattern.search(line) for pattern in DATE_PATTERNS):
-            line = re.sub(r"^(?:[\-・*●○◆■□]+|\d+[.)、])\s*", "", line).strip()
+        # Remove only explicit bullet symbols. Do not strip leading digits,
+        # because a title can start with a date such as "2026/6/15 開発定例会".
+        line = re.sub(r"^[\-・*●○◆■□]+\s*", "", line).strip()
         if line:
             lines.append(line)
     return lines
