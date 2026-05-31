@@ -1,0 +1,3 @@
+# Optional: enables drag-and-drop in the GUI. The app still works without it via paste/file selection.
+tkinterdnd2>=0.4.2
+pytest>=8.0.0
