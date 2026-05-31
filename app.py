@@ -24,8 +24,14 @@ except Exception:
 
 class MinutesApp:
     def __init__(self) -> None:
-        root_class = tkinterdnd2.TkinterDnD.Tk if DND_AVAILABLE else tk.Tk
-        self.root = root_class()
+try:
+    if DND_AVAILABLE:
+        self.root = tkinterdnd2.TkinterDnD.Tk()
+    else:
+        self.root = tk.Tk()
+except Exception:
+    self.root = tk.Tk()
+    DND_AVAILABLE = False
         self.root.title("トランスクリプト議事録メーカー")
         self.root.geometry("820x620")
         self.output_path = tk.StringVar(value=str(Path.cwd() / "minutes.xlsx"))
