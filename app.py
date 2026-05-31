@@ -13,9 +13,13 @@ from tkinter import filedialog, messagebox, ttk
 
 from minutes_maker import save_minutes_excel
 
-DND_AVAILABLE = importlib.util.find_spec("tkinterdnd2") is not None
-if DND_AVAILABLE:
+DND_AVAILABLE = False
+
+try:
     tkinterdnd2 = importlib.import_module("tkinterdnd2")
+    DND_AVAILABLE = True
+except Exception:
+    DND_AVAILABLE = False
 
 
 class MinutesApp:
