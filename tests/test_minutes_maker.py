@@ -1,3 +1,15 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from minutes_maker import (
+    parse_action,
+    parse_transcript,
+    save_minutes_excel,
+)
+
+
 from pathlib import Path
 import zipfile
 
